@@ -1,74 +1,100 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { Alert, Button, StyleSheet, Text, View } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function App() {
+  const [temperatura, setTemperatura] = useState('Carregando...');
+  const [timerAlimentacao, setTimerAlimentacao] = useState('Carregando...');
 
-export default function HomeScreen() {
+  // Defina o IP do ESP32 na sua rede local
+  const esp32Url = 'http://192.168.15.42/';
+
+  // Função para buscar dados do ESP32
+  const fetchData = async () => {
+    try {
+      const response = await axios.get(esp32Url);
+      if (response.status === 200) {
+        const data = response.data;
+        setTemperatura(`${data.temperatura} °C`);
+        setTimerAlimentacao(`${data.timerHora}h:${data.timerMinuto}m:${data.timerSegundo}s`);
+      } else {
+        Alert.alert('Erro', 'Falha ao buscar dados');
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert('Erro', `Falha ao buscar dados: ${error.message}`);
+      } else {
+        Alert.alert('Erro', 'Ocorreu um erro desconhecido.');
+      }
+    }
+  };
+
+  const alimentar = async () => {
+    try {
+      const response = await axios.post(`${esp32Url}alimentar`);
+      if (response.status === 200) {
+        Alert.alert('Sucesso', 'Comando de alimentação enviado!');
+      } else {
+        Alert.alert('Erro', 'Falha ao enviar comando');
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        Alert.alert('Erro', `Falha ao enviar comando: ${error.message}`);
+      } else {
+        Alert.alert('Erro', 'Ocorreu um erro desconhecido.');
+      }
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchData();
+    }, 500); // Atualiza a cada 500ms
+
+    // Limpa o intervalo ao desmontar o componente
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12'
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <Text style={styles.header}>F-PEIXE-A</Text>
+
+      <Text style={styles.label}>Temperatura da água:</Text>
+      <Text style={styles.value}>{temperatura}</Text>
+
+      <Text style={styles.label}>Última alimentação há:</Text>
+      <Text style={styles.value}>{timerAlimentacao}</Text>
+
+      <View style={styles.buttonContainer}>
+        <Button title="Alimentar" onPress={alimentar} />
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    backgroundColor: '#f5f5f5',
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  label: {
+    fontSize: 18,
+    marginTop: 10,
+  },
+  value: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  buttonContainer: {
+    marginTop: 30,
+    width: '80%',
   },
 });
