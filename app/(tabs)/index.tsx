@@ -7,7 +7,7 @@ export default function App() {
   const [timerAlimentacao, setTimerAlimentacao] = useState('Carregando...');
 
   // Defina o IP do ESP32 na sua rede local
-  const esp32Url = 'http://192.168.15.42/';
+  const esp32Url = 'http://192.168.101.32/';
 
   // Função para buscar dados do ESP32
   const fetchData = async () => {
